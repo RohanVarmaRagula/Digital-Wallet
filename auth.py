@@ -59,5 +59,5 @@ def verify_credentials(userid: str, password: str) -> bool:
         print("❌ Incorrect password.")
         return False
 
-store_credentials('user123','password')
-verify_credentials('user123','password')
+# store_credentials('user123','password')
+# verify_credentials('user123','password')
