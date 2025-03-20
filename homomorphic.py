@@ -16,52 +16,33 @@ class Paillier:
         μ = gmpy2.invert(λ, n)
         return (n, g), (λ, μ, n)
 
-    def encrypt(self, m):
-        n, g = self.public_key
+    def encrypt(self, m, public_key):
+        n, g = public_key
         r = random.randint(1, n - 1)
         return (pow(g, m, n * n) * pow(r, n, n * n)) % (n * n)
 
-    def decrypt(self, c):
-        λ, μ, n = self.private_key
+
+    def decrypt(self, c, private_key):
+        λ, μ, n = private_key
         x = pow(c, λ, n * n) - 1
         return int((x // n) * μ % n)
 
-    def homomorphic_addition(self, c1, c2):
-        return (c1 * c2) % (self.public_key[0] ** 2)
+    def homomorphic_addition(self, a, b, public_key):
+        """input: a, b : returns a + b"""
+        return (a * b) % (public_key[0] ** 2)
 
-    def homomorphic_subtraction(self, c1, b):
-        n, _ = self.public_key
-        neg_b = n - b  # Compute -b mod n
-        enc_neg_b = self.encrypt(neg_b)  # Encrypt -b
-        return (c1 * enc_neg_b) % (n * n)  # Enc(a) * Enc(-b)
+    def homomorphic_subtraction(self, a, b, public_key):
+        """input: a, b : returns a - b"""
+        n, _ = public_key
+        b_inv = gmpy2.invert(b, n * n)  # modular inverse of Enc(b)
+        return (a * b_inv) % (n * n)  # Enc(a) * Enc(b)^(-1) mod n²
 
-# Initialize Paillier encryption
-phe = Paillier()
+    
+if __name__ == "__main__":
+    p = Paillier()
+    pb, pr = p.generate_keys()
+    a = p.encrypt(10, pb)
+    b = p.encrypt(5, pb)
 
-file_path = "credentials.json" #modify to file based on file generated at server
-
-def update_DB(sender_userID, receiver_userID, enc_transfer_amount):
-    try:
-        with open(file_path, "r") as file:
-            users = json.load(file)  # Load existing JSON data
-    except (FileNotFoundError, json.JSONDecodeError):
-        print("Error: File not found or invalid JSON format.")
-        return False
-
-    if sender_userID in users and receiver_userID in users:
-        enc_old_balance_sender = users[sender_userID]["balance"]
-        enc_new_balance_sender = phe.homomorphic_subtraction(enc_old_balance_sender, enc_transfer_amount)
-        users[sender_userID]["balance"] = enc_new_balance_sender
-        
-        enc_old_balance_receiver = users[receiver_userID]["balance"]
-        enc_new_balance_receiver = phe.homomorphic_addition(enc_old_balance_receiver, enc_transfer_amount)
-        users[receiver_userID]["balance"] = enc_new_balance_receiver
-
-        with open(file_path, "w") as file:
-            json.dump(users, file, indent=4)
-
-        print(f"Transaction successful! Updated balances for {sender_userID} and {receiver_userID}.")
-        return True
-    else:
-        print("Sender/Receiver not found! Please verify username again.")
-        return False
+    print(p.decrypt(p.homomorphic_addition(a, b, pb), pr))
+    print(p.decrypt(p.homomorphic_subtraction(a, b, pb), pr))

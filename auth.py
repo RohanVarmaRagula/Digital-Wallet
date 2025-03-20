@@ -11,7 +11,7 @@ def hash_password(password: str, salt: bytes) -> str:
     return base64.b64encode(salt + hashed_pw).decode() 
 
 # Store user credentials securely
-def store_credentials(userid: str, password: str, balance: int):
+def store_credentials(userid: str, password: str, balance: int, public_key):
     salt = os.urandom(16)
     hashed_password = hash_password(password, salt)
 
@@ -22,7 +22,7 @@ def store_credentials(userid: str, password: str, balance: int):
             data = json.load(f)
 
     if userid not in data:
-        data[userid] = {"pwd": hashed_password, "balance" : balance,"status" : True}  
+        data[userid] = {"pwd": hashed_password, "balance" : balance, "public_key": public_key}  
     else:
         print("❌ User ID already exists.")
         return
