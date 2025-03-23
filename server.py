@@ -22,9 +22,9 @@ def client_handler(conn, addr):
         print(f"Connected by {addr}")
         while True:
             try:
-                data = conn.recv(1024 * 10)
+                data = conn.recv(1024 * 20)
                 request = json.loads(data.decode())  
-                print(request['request'])
+                
                 if not data or data.decode() == 'exit':
                     with clients_lock:
                         clients_active -= 1

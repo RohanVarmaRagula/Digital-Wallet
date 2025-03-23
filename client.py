@@ -8,8 +8,10 @@ BUFFER_SIZE = 1024
 def start_client(host="127.0.0.1", port=65432):
     """Handles client communication."""
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket, \
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM) as third_party_socket:
             client_socket.connect((host, port))
+            third_party_socket.connect((host, port-1))
             
             option = input("Choose one option:\n1. Login\n2. Signup\n").strip()
             username = input("Enter Username: ").strip()
@@ -21,15 +23,32 @@ def start_client(host="127.0.0.1", port=65432):
                 public_key, private_key = p.generate_keys()
 
                 request = {
+                    "type": "store_keys",
+                    "username": username,
+                    "private_key": [int(private_key[0]), int(private_key[1]), int(private_key[2])],
+                    "public_key": [int(public_key[0]), int(public_key[1])]
+                }
+                third_party_socket.sendall(json.dumps(request).encode())
+                response = json.loads(third_party_socket.recv(BUFFER_SIZE).decode())
+                print("Third party:", response)
+                
+                request = {
                     "request": "signup",
                     "username": username,
                     "password": password,
                     "balance": int(p.encrypt(balance, public_key)),
                     "public_key": (int(public_key[0]), int(public_key[1]))
                 }
+                
             else:
-                public_key = utils.load_public_key(username)
-                private_key = utils.load_private_key(username)
+                request = {
+                    "type": "acquire_keys",
+                    "username": username
+                }
+                third_party_socket.sendall(json.dumps(request).encode())
+                response = json.loads(third_party_socket.recv(BUFFER_SIZE * 10).decode())
+                public_key = response["public_key"]
+                private_key = response["private_key"]
                 request = {"request": "login", "username": username, "password": password}
 
             client_socket.sendall(json.dumps(request).encode())
