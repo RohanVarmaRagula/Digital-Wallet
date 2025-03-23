@@ -1,6 +1,5 @@
 import random
 import gmpy2
-import json
 
 class Paillier:
     def __init__(self, key_size=512):

@@ -4,6 +4,7 @@ import os
 
 FILE_PATH = "credentials.json"
 KEYS_FILE = "keys.json"
+HISTORY_PATH = "history.json"
 
 def load_credentials():
     """Loads user credentials from the JSON file."""
@@ -21,13 +22,28 @@ def save_credentials(users):
     with open(FILE_PATH, "w") as file:
         json.dump(users, file, indent=4)
 
+def update_user_history(username, transaction):
+    """Appends a transaction to the user's history in history.json."""
+    try:
+        with open(HISTORY_PATH, "r") as history_file:
+            history_data = json.load(history_file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        history_data = {}
+
+    if username not in history_data:
+        history_data[username] = []
+    history_data[username].append(transaction)
+
+    with open(HISTORY_PATH, "w") as history_file:
+        json.dump(history_data, history_file, indent=4)
+
+
 def initialize_json(file):
     """Ensures credentials.json exists and is a valid JSON object."""
 
     if not os.path.exists(file): 
         with open(file, "w") as f:
             json.dump({}, f, indent=4)
-        print("Initialized credentials.json (file was missing).")
     else:
         try:
             with open(file, "r") as f:
@@ -36,7 +52,6 @@ def initialize_json(file):
                     raise json.JSONDecodeError("Empty file", data, 0)
                 json.loads(data)  
         except json.JSONDecodeError:
-            print("Warning: credentials.json was corrupted. Resetting it.")
             with open(file, "w") as f:
                 json.dump({}, f, indent=4)
             

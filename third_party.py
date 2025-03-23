@@ -14,12 +14,10 @@ def client_handler(conn, addr):
                 data = conn.recv(1024 * 10)
                 if not data:
                     break  
-                print('recieved')
                 request = json.loads(data.decode())  
                 response = {}
 
                 if request["type"] == "store_keys":
-                    print('storing keys')
                     private_key = request["private_key"]
                     public_key = request["public_key"]
                     username = request["username"]

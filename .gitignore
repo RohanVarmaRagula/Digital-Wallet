@@ -2,3 +2,4 @@ credentials.json
 __pycache__
 keys.json
 key_vault.json
+history.json
