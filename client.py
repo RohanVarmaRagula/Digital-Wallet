@@ -74,7 +74,7 @@ def login(third_party_socket, username, password):
     public_key = response["public_key"]
     private_key = response["private_key"]
     request = {"request": "login", "username": username, "password": password}
-    return public_key, private_key
+    return public_key, private_key, request
     
 def signup(third_party_socket, username, password):
     balance = int(input("Enter balance: "))
@@ -109,30 +109,33 @@ def start_client(host="127.0.0.1", port=65432):
             client_socket.connect((host, port))
             third_party_socket.connect((host, port-1))
             
-            option = input("Choose one option:\n1. Login\n2. Signup\n").strip()
-            username = input("Enter Username: ").strip()
-            password = input("Enter Password: ").strip()
+            while True:
+                option = input("Choose one option:\n1. Login\n2. Signup\n").strip()
+                username = input("Enter Username: ").strip()
+                password = input("Enter Password: ").strip()
 
-            if option == "2":
-                public_key, private_key, request = signup(third_party_socket, username, password)
-            else:
-                public_key, private_key, request = login(third_party_socket, username, password)
-                
-            client_socket.sendall(json.dumps(request).encode())
-            response = json.loads(client_socket.recv(BUFFER_SIZE).decode())
-            print("Server:", response)
+                if option == "2":
+                    public_key, private_key, request = signup(third_party_socket, username, password)
+                else:
+                    public_key, private_key, request = login(third_party_socket, username, password)
+                    
+                client_socket.sendall(json.dumps(request).encode())
+                response = json.loads(client_socket.recv(BUFFER_SIZE).decode())
+                print("Server:", response)
 
-            if response["status"] == "success":
-                utils.save_keys(username, [int(private_key[0]), int(private_key[1]), int(private_key[2])], [int(public_key[0]), int(public_key[1])])
-                while True:
-                    option = input("Choose one option:\n1.Send Money\n2.Check balance\n3.Transaction History\n4.Exit\n").strip()
-                    if option == "1":
-                        send_money(client_socket, username)
-                    elif option == "2":
-                        balance = check_balance(client_socket, username)     
-                        print("Your Balance:", balance)
-                    elif option == "3":
-                        download_history(client_socket, username)
+                if response["status"] == "success":
+                    utils.save_keys(username, [int(private_key[0]), int(private_key[1]), int(private_key[2])], [int(public_key[0]), int(public_key[1])])
+                    while True:
+                        option = input("Menu:\n1.Send Money\n2.Check balance\n3.Transaction History\n4.Log out\nChoose one option: ").strip()
+                        if option == "1":
+                            send_money(client_socket, username)
+                        elif option == "2":
+                            balance = check_balance(client_socket, username)     
+                            print("Your Balance:", balance)
+                        elif option == "3":
+                            download_history(client_socket, username)
+                        else:
+                            break
                     
     except ConnectionRefusedError:
         print("Failed to connect to server. Is it running?")
